@@ -38,6 +38,7 @@ from ansible.errors import AnsibleError
 from ansible.module_utils.six import string_types
 from ansible.plugins.lookup import LookupBase
 from ansible.utils.listify import listify_lookup_plugin_terms
+from ansible.module_utils._text import to_native
 
 import re
 
@@ -75,13 +76,13 @@ class LookupModule(LookupBase):
         
             if '-' not in sr:
                 # singleton, i.e. not a range; return as is
-                ret.append(sr)
+                ret.append(to_native(sr))
                 continue
             
             # Apply the regex
             mo = re_subrange.search(sr)
             if not mo:
-                raise AnsibleError('\"{}\" cannot be parsed'.format(sr))
+                raise AnsibleError('"{}" cannot be parsed'.format(sr))
         
             if mo.group('right_context'):
                 if mo.group('left_context') != mo.group('right_context'):
@@ -95,11 +96,22 @@ class LookupModule(LookupBase):
             context = ''
             if mo.group('left_context'):
                 context = mo.group('left_context')
+
+            try:
+                po_left = int(mo.group('left_port_number'))
+                po_right = int(mo.group('right_port_number'))
+            except ValueError as e:
+                raise AnsibleError('Failed to parse "{}": '
+                                   'ValueError "{}"'.
+                                   format(sr, to_native(e)))
+
+            if po_right < po_left:
+                raise AnsibleError('Failed to parse "{}": '
+                                   'range from {} to {} is not obvious'.
+                                   format(sr, po_left, po_right))
             
-            po_left = int(mo.group('left_port_number'))
-            po_right = int(mo.group('right_port_number'))
             for po in range(po_left, po_right + 1):
-                ret.append('{}{}'.format(context, po))
+                ret.append(to_native('{}{}'.format(context, po)))
 
         return ret
     #---

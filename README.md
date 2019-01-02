@@ -52,9 +52,11 @@ Examples of legal strings:
 * `'Te2/1-12, Gig 5/37-48,'`# Can mix and match "Te2/" and "Gi5/"
 * `'Gi1-3'`                 # Interfaces don't need to have a slot, i.e. no "/" is OK
 * `'Fo2/2/1-4'`             # Three-number format (e.g. chassis/slot/port)
+* `'Te3/1-1'`               # Not really a range, but syntax is legal; will just return the single item "Te3/1"
 
 Not supported:
 * `'Te3/1-Te4/48'`  # Terms on either side of the "-" must have the same spelling and case ("Te3/" vs "Te4/")
 * `'Te3/1-te3/4'`   # Terms on either side of the "-" must have the same spelling and case ("Te" vs "te")
 * `'Te3/1-Ten3/4'`  # Terms on either side of the "-" must have the same spelling and case ("Te" vs "Ten")
+* `'Te3/4-1'`       # Range has to be ascending ("4-1" is in descending order)
 * `'Te3/1.101-108'` # Subinterface support
