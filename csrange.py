@@ -21,11 +21,26 @@ DOCUMENTATION = """
 """
 
 EXAMPLES = """
-- name: "Get the list of vlan ids"
-  debug: msg="VLANs {{lookup('csrange', '1-10,21-30')}}"
+    - name: Debug messages
+      debug:
+        msg: "{{ item }}"
+      with_csrange:
+        - 'Fo1/4-14,Te3/12'
 
-- name: "Get the list of interfaces"
-  debug: msg="Interfaces {{lookup('csrange', 'Te3/1-4,Te4/1-4')}}"
+    - name: SVI creation
+      vars:
+        ip_prefix: 10.133
+        ip_mask: 255.255.255.0
+        svi_list: '1-5,11-15'
+      template: src=svi_gen.j2 dest=svi_gen.cfg
+
+where the template code in svi_gen.j2 looks like:
+
+{% for svi in lookup('csrange', svi_list, wantlist=True) %}
+interface Vlan{{ svi }}
+no shut
+ip address {{ ip_prefix }}.{{ svi }}.1 {{ ip_mask }}
+{% endfor %}
 """
 
 RETURN = """
