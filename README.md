@@ -36,6 +36,7 @@ ok: [localhost] => (item=Gi3) => {
 ok: [localhost] => (item=Te1/3) => {
     "msg": "Te1/3"
 }
+```
 
 ## Example 2
 
