@@ -132,8 +132,8 @@ Examples of legal strings:
 * `'Gi1-3'`                 # Interfaces don't need to have a slot, i.e. no "/" is OK
 * `'Fo2/2/1-4'`             # Three-number format (e.g. chassis/slot/port)
 * `'Te3/1-1'`               # Not really a range, but syntax is legal; will just return the single item "Te3/1"
-* `'Te3/1-te3/4'`           # Terms on either side of the "-" need not have the same spelling and case ("Te" vs "te"); both will be expanded to TenGigabitEthernet3/12
-* `'Te3/1-Ten3/4'`          # Terms on either side of the "-" need not have the same spelling and case ("Te" vs "Ten"); both will be expanded to TenGigabitEthernet3/12
+* `'Te3/1-te3/4'`           # Terms on either side of the "-" need not have the same spelling and case ("Te" vs "te"); both will be expanded to "TenGigabitEthernet"
+* `'Te3/1-Ten3/4'`          # Terms on either side of the "-" need not have the same spelling and case ("Te" vs "Ten"); both will be expanded to "TenGigabitEthernet"
 
 Not supported:
 * `'Te3/1-Te4/48'`  # Terms on either side of the "-" must have the same prefix ("Te3/" vs "Te4/")
