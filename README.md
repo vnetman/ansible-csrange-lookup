@@ -1,56 +1,81 @@
 # ansible-csrange-lookup
 csrange is an ansible lookup plugin that listifies ranges of the form "Gi1/1-8,Te1/1-4", "11-20,4001-4095" etc.
 
-## Example 1
+In addition, abbreviated interface types e.g. "Te" will be expanded to "TenGigabitEthernet". The following interface types are recognized:
 
-    - name: Debug messages
+* 'Ethernet'
+* 'FastEthernet'
+* 'FortyGigabitEthernet'
+* 'GigabitEthernet'
+* 'HundredGigabitEthernet'
+* 'Loopback'
+* 'Port-channel'
+* 'TenGigabitEthernet'
+* 'Tunnel'
+* 'TwentyfiveGigabitEthernet'
+* 'Vlan'
+
+## Example 1:
+
+    - name: Test case 1
       debug:
         msg: "{{ item }}"
       with_csrange:
-        - 'Fo1/4-14,Te3/12'
+        - 'Fo2/1/4-14,Te3/12'
 
 will result in:
 
 ```
-ok: [localhost] => (item=Fo1/1/1) => {
-    "msg": "Fo1/1/1"
+TASK [Test case 1] *******************************************************************************************************************************************
+ok: [localhost] => (item=FortyGigabitEthernet2/1/4) => {
+    "msg": "FortyGigabitEthernet2/1/4"
 }
-ok: [localhost] => (item=Fo1/1/2) => {
-    "msg": "Fo1/1/2"
+ok: [localhost] => (item=FortyGigabitEthernet2/1/5) => {
+    "msg": "FortyGigabitEthernet2/1/5"
 }
-ok: [localhost] => (item=Fo1/1/3) => {
-    "msg": "Fo1/1/3"
+ok: [localhost] => (item=FortyGigabitEthernet2/1/6) => {
+    "msg": "FortyGigabitEthernet2/1/6"
 }
-ok: [localhost] => (item=Fo1/1/4) => {
-    "msg": "Fo1/1/4"
+ok: [localhost] => (item=FortyGigabitEthernet2/1/7) => {
+    "msg": "FortyGigabitEthernet2/1/7"
 }
-ok: [localhost] => (item=Gi1) => {
-    "msg": "Gi1"
+ok: [localhost] => (item=FortyGigabitEthernet2/1/8) => {
+    "msg": "FortyGigabitEthernet2/1/8"
 }
-ok: [localhost] => (item=Gi2) => {
-    "msg": "Gi2"
+ok: [localhost] => (item=FortyGigabitEthernet2/1/9) => {
+    "msg": "FortyGigabitEthernet2/1/9"
 }
-ok: [localhost] => (item=Gi3) => {
-    "msg": "Gi3"
+ok: [localhost] => (item=FortyGigabitEthernet2/1/10) => {
+    "msg": "FortyGigabitEthernet2/1/10"
 }
-ok: [localhost] => (item=Te1/3) => {
-    "msg": "Te1/3"
+ok: [localhost] => (item=FortyGigabitEthernet2/1/11) => {
+    "msg": "FortyGigabitEthernet2/1/11"
+}
+ok: [localhost] => (item=FortyGigabitEthernet2/1/12) => {
+    "msg": "FortyGigabitEthernet2/1/12"
+}
+ok: [localhost] => (item=FortyGigabitEthernet2/1/13) => {
+    "msg": "FortyGigabitEthernet2/1/13"
+}
+ok: [localhost] => (item=FortyGigabitEthernet2/1/14) => {
+    "msg": "FortyGigabitEthernet2/1/14"
+}
+ok: [localhost] => (item=TenGigabitEthernet3/12) => {
+    "msg": "TenGigabitEthernet3/12"
 }
 ```
 
 ## Example 2
 
 ### Playbook:
-```
-    - name: SVI creation
+    - name: Test case 2
       vars:
         ip_prefix: 10.133
         ip_mask: 255.255.255.0
         svi_list: '1-5,11-15'
       template: src=svi_gen.j2 dest=svi_gen.cfg
-```
 
-### Jinja2
+### Jinja2 template:
 
 ```
 #jinja2:lstrip_blocks: True
@@ -107,11 +132,11 @@ Examples of legal strings:
 * `'Gi1-3'`                 # Interfaces don't need to have a slot, i.e. no "/" is OK
 * `'Fo2/2/1-4'`             # Three-number format (e.g. chassis/slot/port)
 * `'Te3/1-1'`               # Not really a range, but syntax is legal; will just return the single item "Te3/1"
+* `'Te3/1-te3/4'`           # Terms on either side of the "-" need not have the same spelling and case ("Te" vs "te"); both will be expanded to TenGigabitEthernet3/12
+* `'Te3/1-Ten3/4'`          # Terms on either side of the "-" need not have the same spelling and case ("Te" vs "Ten"); both will be expanded to TenGigabitEthernet3/12
 
 Not supported:
-* `'Te3/1-Te4/48'`  # Terms on either side of the "-" must have the same spelling and case ("Te3/" vs "Te4/")
-* `'Te3/1-te3/4'`   # Terms on either side of the "-" must have the same spelling and case ("Te" vs "te")
-* `'Te3/1-Ten3/4'`  # Terms on either side of the "-" must have the same spelling and case ("Te" vs "Ten")
+* `'Te3/1-Te4/48'`  # Terms on either side of the "-" must have the same prefix ("Te3/" vs "Te4/")
 * `'Te3/4-1'`       # Range has to be ascending ("4-1" is in descending order)
 * `'Te3/1.101-108'` # Subinterface support
 

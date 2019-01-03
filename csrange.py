@@ -74,8 +74,61 @@ re_subrange = re.compile(
     (?P<right_context>[A-Za-z0-9/]*[^\d])? # The second 'Gi5/'
     (?P<right_port_number>\d+)$            # 48
     )''', re.VERBOSE)
+
+# Regex to grab the interface type from the left/right context (e.g. "Gi"
+# from "Gi5/"). This is needed for the "expansion" functionality
+re_abbrev_intf_type = re.compile(
+    r'''(
+    ^(?P<intf_context>[A-Za-z]+)
+    (?P<context_tail>.*)$
+    )''', re.VERBOSE)
+
+# Known interface types
+known_interface_types = ('Ethernet',
+                         'FastEthernet',
+                         'FortyGigabitEthernet',
+                         'GigabitEthernet',
+                         'HundredGigabitEthernet',
+                         'Loopback',
+                         'Port-channel',
+                         'TenGigabitEthernet',
+                         'Tunnel',
+                         'TwentyfiveGigabitEthernet',
+                         'Vlan',)
     
 class LookupModule(LookupBase):
+    
+    def _maybe_expand_interface_name(self, abbrev):
+        """Take something like 'Gi5/' or 'gig5/' via the 'abbrev' parameter 
+        and return the expanded version, like 'GigabitEthernet5/'. If the
+        expansion is not possible (e.g. if the abbrev is an empty string)
+        or if the expanded version is ambiguous (e.g. 'F3/1' can be either
+        'FortyGigabitEthernet3/1' or 'FastEthernet3/1'), return abbrev 
+        itself."""
+        
+        mo = re_abbrev_intf_type.search(abbrev)
+        if not mo:
+            return abbrev
+
+        intf_context = mo.group('intf_context')
+        context_tail = mo.group('context_tail')
+
+        # Do a case-insensitive "startswith" test against the intf_context
+        # for all the known interface types.
+        re_to_match = re.compile('^{}.*$'.format(intf_context), re.I)
+        found = []
+        for ki in known_interface_types:
+            if re_to_match.match(ki):
+                found.append(ki)
+
+        # If there were no matches, or if there was more than one match,
+        # return the given abbrev argument unmodified.
+        if len(found) != 1:
+            return abbrev
+        
+        return found[0] + context_tail
+    #---
+    
     def _do_process_csrange(self, terms, variables):
         ret = []
 
@@ -91,16 +144,21 @@ class LookupModule(LookupBase):
         
             if '-' not in sr:
                 # singleton, i.e. not a range; return as is
-                ret.append(to_native(sr))
+                ret.append(to_native(self._maybe_expand_interface_name(sr)))
                 continue
             
             # Apply the regex
             mo = re_subrange.search(sr)
             if not mo:
                 raise AnsibleError('"{}" cannot be parsed'.format(sr))
-        
+
+            left_context = ''
+            if mo.group('left_context'):
+                left_context = self._maybe_expand_interface_name(mo.group('left_context'))
+                
             if mo.group('right_context'):
-                if mo.group('left_context') != mo.group('right_context'):
+                right_context = self._maybe_expand_interface_name(mo.group('right_context'))
+                if left_context != right_context:
                     raise AnsibleError('Failed to parse "{}": '
                                        'left hand side context "{}" is '
                                        'different from right hand side '
@@ -108,10 +166,6 @@ class LookupModule(LookupBase):
                                        format(sr, mo.group('left_context'),
                                               mo.group('right_context')))
                 
-            context = ''
-            if mo.group('left_context'):
-                context = mo.group('left_context')
-
             try:
                 po_left = int(mo.group('left_port_number'))
                 po_right = int(mo.group('right_port_number'))
@@ -126,7 +180,7 @@ class LookupModule(LookupBase):
                                    format(sr, po_left, po_right))
             
             for po in range(po_left, po_right + 1):
-                ret.append(to_native('{}{}'.format(context, po)))
+                ret.append(to_native('{}{}'.format(left_context, po)))
 
         return ret
     #---
